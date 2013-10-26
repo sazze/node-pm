@@ -1,0 +1,46 @@
+{
+  "name": "node-pm",
+  "version": "1.0.0",
+  "description": "A better worker process manager",
+  "main": "./lib/main.js",
+  "homepage": "",
+  "scripts": {
+    "test": "mocha test/*.test.js"
+  },
+  "engines": [
+    "node >= 0.8.0"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sazze/winston-logstash-udp.git"
+  },
+  "dependencies": {
+    "optimist": "~0.6.0"
+  },
+  "devDependencies": {
+    "mocha": ">=1.8.2",
+    "chai": ">=1.5.0"
+  },
+  "keywords": [
+    "logging",
+    "sysadmin",
+    "tools"
+  ],
+  "bugs": {
+    "url": "https://github.com/sazze/winston-logstash-udp/issues"
+  },
+  "authors": [
+    {
+      "name": "Craig Thayer",
+      "email": "cthayer@sazze.com"
+    },
+    {
+      "name": "Kevin Smithson",
+      "email": "ksmithson@sazze.com"
+    }
+  ],
+  "license": "MIT",
+  "bin": {
+    "node-pm": "./lib/main.js"
+  }
+}
