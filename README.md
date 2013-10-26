@@ -1,3 +1,5 @@
+To generate docs use command `/usr/local/bin/jsdoc -c docs/template/jsdoc.conf.json`
+
 winston-logstash-udp [![Build Status](https://travis-ci.org/sazze/winston-logstash-udp.png?branch=master)](https://travis-ci.org/sazze/winston-logstash-udp)
 ====================
 
