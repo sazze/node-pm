@@ -43,6 +43,6 @@
   ],
   "license": "MIT",
   "bin": {
-    "node-pm": "./lib/main.js"
+    "node-pm": "./bin/node-pm"
   }
 }
