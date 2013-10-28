@@ -7,7 +7,7 @@ describe('Starting up Worker Manager', function() {
 
   beforeEach(function() {
     pm = require('../lib/main');
-  })
+  });
 
   it('should spawn 4 workers', function() {
     master = pm.start({n: 4, _: ['./test/scripts/httpServer.js']});
@@ -16,5 +16,5 @@ describe('Starting up Worker Manager', function() {
 
   afterEach(function() {
     master.exit();
-  })
+  });
 });
