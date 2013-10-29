@@ -46,8 +46,8 @@ describe('Worker Manager', function() {
   });
 
   describe('event listening', function() {
-    it.skip('should call exit when process is killed hard', function(done) {
-      var master = pm.start({s: true, _: ['./test/scripts/httpServer.js']});
+    it('should call exit when process is killed hard', function(done) {
+      var master = pm.start({n: 1, s: true, _: ['./test/scripts/httpServer.js']});
       var workerId;
 
       master.cluster.on('exit', function(worker) {
@@ -56,12 +56,11 @@ describe('Worker Manager', function() {
         done();
       });
 
-      for (var id in master.cluster.workers) {
-        workerId = parseInt(id);
-        process.kill(master.cluster.workers[id].process.pid, 'SIGKILL');
-        break;
-      }
-     });
+      master.cluster.on('listening', function(worker) {
+          workerId = worker.id;
+          process.kill(worker.process.pid, 'SIGKILL');
+      });
+    });
   });
 
 
