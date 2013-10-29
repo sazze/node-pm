@@ -74,10 +74,7 @@ var debug = Logger.debug;
 var verbose = Logger.verbose;
 var error = Logger.error;
 var info = Logger.info;
-var forkTimers = {};
-var lifecycleTimers = {};
-var disconnectTimers = {};
-var suicideOverrides = {};
+
 
 /**
  * Register Cluster Events
@@ -91,6 +88,11 @@ var suicideOverrides = {};
  */
 module.exports = function (cluster) {
   "use strict";
+
+  var forkTimers = {};
+  var lifecycleTimers = {};
+  var disconnectTimers = {};
+  var suicideOverrides = {};
 
   var config = require('./config');
 
@@ -114,35 +116,44 @@ module.exports = function (cluster) {
   // when a worker starts listening
   cluster.on('listening', function (worker, address) {
     verbose('worker %d listening on %s:%d', worker.process.pid, address.address, address.port);
-    clearTimeout(forkTimers[worker.id]);
-    delete forkTimers[worker.id];
+    if (forkTimers[worker.id]) {
+      clearTimeout(forkTimers[worker.id]);
+      delete forkTimers[worker.id];
+    }
   });
 
   // when a worker disconnects
   cluster.on('disconnect', function (worker) {
     verbose('worker %d disconnect', worker.process.pid);
 
-    clearTimeout(lifecycleTimers[worker.id]);
-    delete lifecycleTimers[worker.id];
+    if (lifecycleTimers[worker.id]) {
+      clearTimeout(lifecycleTimers[worker.id]);
+      delete lifecycleTimers[worker.id];
+    }
 
     disconnectTimers[worker.id] = setTimeout(function () {
       disconnectTimeoutHandler(worker, cluster);
-    });
+    }, config.timeouts.stop);
   });
 
   // when a worker exits
   cluster.on('exit', function (worker, code, signal) {
     verbose('worker %d exit', worker.process.pid);
 
-    clearTimeout(disconnectTimers[worker.id]);
-    delete disconnectTimers[worker.id];
+    if (disconnectTimers[worker.id]) {
+      clearTimeout(disconnectTimers[worker.id]);
+      delete disconnectTimers[worker.id];
+    }
 
     if (worker.suicide) {
       debug('suicide');
     }
 
-    debug(code);
-    debug(signal);
+    debug('Exit Code: %d', code);
+
+    if (signal) {
+      debug('Exit Signal: %s', signal);
+    }
 
     if (worker.suicide && suicideOverrides[worker.id]) {
       worker.suicide = false;
@@ -154,66 +165,66 @@ module.exports = function (cluster) {
       cluster.fork();
     }
   });
-};
 
-/**
- * Called when worker takes too long to fork
- *
- * @private
- * @param worker
- * @param cluster
- */
-function forkTimeoutHandler(worker, cluster) {
-  verbose('worker %d is stuck in fork', worker.process.pid);
+  /**
+   * Called when worker takes too long to fork
+   *
+   * @private
+   * @param worker
+   * @param cluster
+   */
+  function forkTimeoutHandler(worker, cluster) {
+    verbose('worker %d is stuck in fork', worker.process.pid);
 
-  if (!cluster.workers[worker.id]) {
-    return;
-  }
+    if (!cluster.workers[worker.id]) {
+      return;
+    }
 
-  // something is wrong with this worker.  Kill it!
-  suicideOverrides[worker.id] = worker.id;
-  process.kill(worker.process.pid, 'SIGKILL');
-}
-
-/**
- * Called when worker has reached the end of it's lifespan
- *
- * @private
- * @param worker
- * @param cluster
- */
-function lifecycleTimeoutHandler(worker, cluster) {
-  verbose('worker %d has reached the end of it\'s life', worker.process.id);
-
-  if (!cluster.workers[worker.id]) {
-    return;
-  }
-
-  suicideOverrides[worker.id] = worker.id;
-  worker.disconnect();
-}
-
-/**
- * Called when worker is taking too long to disconnect
- *
- * @private
- * @param worker
- * @param cluster
- */
-function disconnectTimeoutHandler(worker, cluster) {
-  verbose('worker %d is stuck in disconnect', worker.process.id);
-
-  if (!cluster.workers[worker.id]) {
-    return;
-  }
-
-  // if this is not a suicide we need to preserve that as worker.kill() will make this a suicide
-  if (!worker.suicide) {
+    // something is wrong with this worker.  Kill it!
     suicideOverrides[worker.id] = worker.id;
+    process.kill(worker.process.pid, 'SIGKILL');
   }
 
-  worker.kill('SIGKILL');
-}</pre>
+  /**
+   * Called when worker has reached the end of it's lifespan
+   *
+   * @private
+   * @param worker
+   * @param cluster
+   */
+  function lifecycleTimeoutHandler(worker, cluster) {
+    verbose('worker %d has reached the end of it\'s life', worker.process.pid);
+
+    if (!cluster.workers[worker.id]) {
+      return;
+    }
+
+    suicideOverrides[worker.id] = worker.id;
+    worker.disconnect();
+  }
+
+  /**
+   * Called when worker is taking too long to disconnect
+   *
+   * @private
+   * @param worker
+   * @param cluster
+   */
+  function disconnectTimeoutHandler(worker, cluster) {
+    verbose('worker %d is stuck in disconnect', worker.process.pid);
+
+    if (!cluster.workers[worker.id]) {
+      return;
+    }
+
+    // if this is not a suicide we need to preserve that as worker.kill() will make this a suicide
+    if (!worker.suicide) {
+      suicideOverrides[worker.id] = worker.id;
+    }
+
+    worker.kill('SIGKILL');
+  }
+};</pre>
         </article>
     </section>
 
@@ -233,8 +244,8 @@ function disconnectTimeoutHandler(worker, cluster) {
 					<br />
 					
 		<span class="jsdoc-message">
-		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.1</a>
-		on Tue Oct 29 2013 08:01:15 GMT-0700 (PDT) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-dev</a>
+		on Tue Oct 29 2013 15:35:12 GMT-0700 (PDT) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>
