@@ -1,9 +1,17 @@
-To generate docs use command `/usr/local/bin/jsdoc -c docs/template/jsdoc.conf.json`
-
 node-pm [![Build Status](https://travis-ci.org/sazze/node-pm.png?branch=master)](https://travis-ci.org/sazze/node-pm)
 ====================
 
 Run your nodejs service in style (think php-fpm for nodejs)
+
+
+Installation
+====================
+
+### Install node-pm
+
+``` bash
+    npm install -g node-pm
+```
 
 Usage
 ====================
@@ -23,8 +31,23 @@ Usage
 Run Tests
 ====================
 
+``` bash
+    npm test
 ```
-  npm test
+
+Generate Docs
+====================
+
+### Install jsdoc
+
+``` bash
+    npm install -g jsdoc
+```
+
+### Generate Docs
+
+``` bash
+    jsdoc -c docs/template/jsdoc.conf.json
 ```
 
 ====================
