@@ -16,12 +16,12 @@
     "url": "https://github.com/sazze/winston-logstash-udp.git"
   },
   "dependencies": {
-    "optimist": "~0.6.0"
+    "optimist": "~0.6.0",
+    "underscore": "~1.5.2"
   },
   "devDependencies": {
     "mocha": ">=1.8.2",
-    "chai": ">=1.5.0",
-    "underscore": "~1.5.2"
+    "chai": ">=1.5.0"
   },
   "keywords": [
     "logging",

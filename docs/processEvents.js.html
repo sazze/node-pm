@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>node-pm Modules</title>
+	<title>node-pm Source: processEvents.js</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -59,83 +59,62 @@
 	<div class="row-fluid">
 
 		
-		<div class="span8">
-			
+			<div class="span12">
+				
 				<div id="main">
 					
 
 
-	<h1 class="page-title">Modules</h1>
-<section>
-
-<header>
-    <h2>
+		<h1 class="page-title">Source: processEvents.js</h1>
     
-    </h2>
-    
-</header>
+    <section>
+        <article>
+            <pre class="sunlight-highlight-javascript linenums">var Logger = require('./Logger');
+var debug = Logger.debug;
+var verbose = Logger.verbose;
+var error = Logger.error;
+var info = Logger.info;
 
-<article>
-    <div class="container-overview">
-    
+/**
+ * Register Process Events
+ *
+ * @module
+ *
+ * @author Kevin Smithson &lt;ksmithson@sazze.com>
+ * @author Craig Thayer &lt;cthayer@sazze.com>
+ *
+ * @param cluster
+ */
+module.exports = function(cluster) {
+  "use strict";
 
-    
-        
+  process.on('SIGTERM', function () {
+    verbose('SIGTERM recieved');
+    cluster.disconnect(process.exit);
+  });
 
-        
-<dl class="details">
-    
+  process.on('SIGABRT', function () {
+    verbose('SIGABRT recieved');
+    cluster.disconnect(process.exit);
+  });
 
-    
+  process.on('SIGINT', function () {
+    verbose('SIGINT recieved');
+    cluster.disconnect(process.exit);
+  });
 
-    
+  process.on('SIGHUP', function () {
+    verbose('SIGHUP recieved');
+  });
 
-    
+  process.on('exit', function () {
+    info('exiting node-pm');
+    cluster.disconnect(process.exit);
+  });
+};</pre>
+        </article>
+    </section>
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-        
-    
-    </div>
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
 
 
 
@@ -158,10 +137,6 @@
 				</footer>
 			</div>
 
-			
-			<div class="span3">
-				<div id="toc"></div>
-			</div>
 			
 			<br clear="both">
 		</div>
