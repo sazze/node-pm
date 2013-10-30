@@ -1,7 +1,7 @@
 {
   "name": "node-pm",
   "preferGlobal": true,
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "A better worker process manager",
   "main": "./lib/main.js",
   "homepage": "",
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sazze/winston-logstash-udp.git"
+    "url": "https://github.com/sazze/node-pm.git"
   },
   "dependencies": {
     "optimist": "~0.6.0",
@@ -30,7 +30,7 @@
     "tools"
   ],
   "bugs": {
-    "url": "https://github.com/sazze/winston-logstash-udp/issues"
+    "url": "https://github.com/sazze/node-pm/issues"
   },
   "authors": [
     {
