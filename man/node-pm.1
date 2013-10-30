@@ -1,0 +1,45 @@
+.TH node-pm 1 "October 2013"
+.SH NAME
+node-pm \- worker process manager for node js
+.SH SYNOPSIS
+.B node-pm [-vs] [-n
+.I number-of-workers
+.B ] [--tStart
+.I timeout
+.B ] [--tStop
+.I timeout
+.B ] [--tMaxAge
+.I timeout
+.B ]
+.I file
+.B ...
+.SH DESCRIPTION
+.B node-pm
+Run your nodejs service in style (think php-fpm for nodejs)
+.SH OPTIONS
+.IP "-n, --numProc"
+The number of workers to spawn.  Defaults
+to one worker per CPU.
+.IP "-s, --silent"
+Silence workers
+.IP -v
+Enable more verbose logging.  Each additional
+-v increases logging verbosity (up to 3 times)
+.IP "--tStart timeout"
+Wait a maximum of
+.I timeout
+ms for a worker to start.
+Default is 30000 ms (30 seconds)
+.IP "--tStop timeout"
+Wait a maximum of
+.I timeout
+ms for a worker to stop.
+Default is 30000 ms (30 seconds)
+.IP "--tMaxAge timeout"
+A worker will only run for a maximum of
+.I timeout
+ms.
+Default is 1800000 ms (30 minutes)
+.SH CONTRIBUTORS
+Craig Thayer (https://github.sazze.com/sazze)
+Kevin Smithson (https://github.sazze.com/sazze)
