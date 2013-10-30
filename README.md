@@ -52,8 +52,9 @@ Generate Docs
 
 ====================
 
-#### Author: [Craig Thayer](https://github.com/sazze)
-#### Author: [Kevin Smithson](https://github.com/sazze)
+#### Contributors:
+    [Craig Thayer](https://github.com/sazze)
+    [Kevin Smithson](https://github.com/sazze)
 
 #### License: MIT
 
