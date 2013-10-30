@@ -4,17 +4,18 @@ var child = require('child_process');
 
 describe('Worker Manager', function() {
   "use strict";
+  var ps;
 
   describe('during startup', function() {
     it('should require a start script', function(done) {
-      spawn('', function(out) {
+      ps = spawn('', function(out) {
           expect(out).to.match(/.*app start script must be specified/);
           done();
       });
     });
 
     it('should require an existing start script', function(done) {
-      spawn('fake.js', function(out) {
+      ps = spawn('fake.js', function(out) {
         expect(out).to.match(/.*cannot find application start script: fake.js/);
         done();
       });
@@ -33,7 +34,7 @@ describe('Worker Manager', function() {
     it('should re-spawn child process if it is killed hard', function(done) {
       var killSent = false;
 
-      spawn('pid.js -n 1 -v', function (out) {
+      ps = spawn('pid.js -n 1 -v', function (out) {
         var matches;
         var pid;
 
@@ -62,7 +63,7 @@ describe('Worker Manager', function() {
     });
 
     it('should call exit when child process exits', function(done) {
-      spawn('childExit.js -n 1 -vvv', function(out) {
+      ps = spawn('childExit.js -n 1 -vvv', function(out) {
         var matches;
         var pid;
 
@@ -92,7 +93,7 @@ describe('Worker Manager', function() {
     });
 
     it('should kill the forked processes', function(done) {
-      spawn('pid.js -n 1', function(out) {
+      ps = spawn('pid.js -n 1', function(out) {
         var pid = parseInt(out.replace(/\D/g, ''), 10)
         this.on('exit', function() {
           setTimeout(function() {
@@ -111,7 +112,7 @@ describe('Worker Manager', function() {
 
   describe('while running', function() {
     it('should spawn 4 workers', function(done) {
-      spawn('httpServer.js -vv -n 4', function(out) {
+      ps = spawn('httpServer.js -vv -n 4', function(out) {
         if (out.match(/.*\d+ workers.*online/ig)) {
           expect(out).to.match(/.*4 workers.*online/ig);
           done();
@@ -122,7 +123,7 @@ describe('Worker Manager', function() {
 
     it('should listen on more than one port', function(done) {
       var listenCount = 0;
-      spawn('multipleHttpServers.js -vvv -n 1', function(out) {
+      ps = spawn('multipleHttpServers.js -vvv -n 1', function(out) {
         if (out.match(/.*worker \d+ listening on.*/ig)) {
           listenCount++;
 
@@ -135,6 +136,14 @@ describe('Worker Manager', function() {
         }
       });
     });
+  });
+
+  afterEach(function() {
+    try {
+      ps.kill();
+    } catch (e) {
+      //ignore these errors
+    }
   });
 });
 
