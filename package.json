@@ -6,7 +6,8 @@
   "main": "./lib/main.js",
   "homepage": "",
   "scripts": {
-    "test": "make test"
+    "test": "make test",
+    "docs": "jsdoc -c ./docs/template/jsdoc.conf.json"
   },
   "engines": [
     "node >= 0.8.0"
