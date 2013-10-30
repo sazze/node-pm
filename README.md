@@ -47,7 +47,7 @@ Generate Docs
 ### Generate Docs
 
 ``` bash
-    jsdoc -c docs/template/jsdoc.conf.json
+    npm run-script docs
 ```
 
 ====================

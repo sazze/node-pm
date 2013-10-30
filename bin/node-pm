@@ -12,10 +12,24 @@ var optimist = require('optimist');
 var config = require('../lib/config');
 
 var options = optimist
-  .usage('Run a node app in style\n\nUsage: $0 [app start script]')
+  .usage('Run a node app in style\n\nUsage: $0 [app start script]\n\nVersion: ' + require('../package.json').version)
   .boolean('s').alias('s', 'silent').default('s', false).describe('s', 'silence workers')
   .boolean('v').default('v', []).describe('v', 'show more verbose output.  most verbose output: -vvv')
   .alias('n', 'numProc').default('n', 0).describe('n', 'number of workers to spawn')
+  .default('tStart', 30000).describe('tStart', 'max number of milliseconds to wait for worker to start')
+  .default('tStop', 30000).describe('tStop', 'max number of milliseconds to wait for worker to stop')
+  .default('tMaxAge', 1800000).describe('tMaxAge', 'max number of milliseconds a worker will live')
   .demand(1).argv;
+
+//format timeout options properly
+options.timeouts = {
+  start: parseInt(options.tStart) > 0 ? options.tStart : undefined,
+  stop: parseInt(options.tStop) > 0 ? options.tStop : undefined,
+  maxAge: parseInt(options.tMaxAge) > 0 ? options.tMaxAge : undefined
+};
+
+delete options.tStart;
+delete options.tStop;
+delete options.tMaxAge;
 
 pm.start(options);
