@@ -1,5 +1,4 @@
-var http = require('http').createServer();
-http.listen(58087);
+require('http').createServer().listen(58087);
+require('http').createServer().listen(58088);
 
-var http2 = require('http').createServer();
-http2.listen(58088);
+//require('http').createServer().listen(58089);

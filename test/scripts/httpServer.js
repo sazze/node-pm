@@ -1,2 +1,1 @@
-var http = require('http').createServer();
-http.listen(58085);
+require('http').createServer().listen(0);
