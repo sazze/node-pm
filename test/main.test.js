@@ -31,7 +31,7 @@ describe('Worker Manager', function() {
 
   describe('event listening', function() {
     it.skip('should call exit when process is killed hard', function(done) {
-      var master = pm.start({n: 1, v: false, s: true, _: ['./test/scripts/httpServer.js']});
+      var master = pm.start({n: 1, v: [], s: true, _: ['./test/scripts/httpServer.js']});
       var workerId = 0;
       var doneCount = 0;
 
@@ -48,7 +48,7 @@ describe('Worker Manager', function() {
     });
 
     it.skip('should call exit when child process exits', function(done) {
-      var master = pm.start({n: 1, v: true, s: true, _: ['./test/scripts/childExit.js']});
+      var master = pm.start({n: 1, v: [true], s: true, _: ['./test/scripts/childExit.js']});
 
       master.cluster.once('exit', function(worker) {
         expect(worker.suicide).to.equal(false);
@@ -76,9 +76,9 @@ describe('Worker Manager', function() {
 
   describe('while running', function() {
     it('should spawn 4 workers', function(done) {
-      spawn('httpServer.js --vv', function(out) {
+      spawn('httpServer.js -vv -n 4', function(out) {
         if (out.match(/.*\d+ workers.*online/ig)) {
-          expect(out).to.match(/.*\d+ workers.*online/ig);
+          expect(out).to.match(/.*4 workers.*online/ig);
           done();
           return 'kill';
         }
@@ -87,7 +87,7 @@ describe('Worker Manager', function() {
 
     it('should listen on more than one port', function(done) {
       var listenCount = 0;
-      spawn('multipleHttpServers.js --vvv -n 1', function(out) {
+      spawn('multipleHttpServers.js -vvv -n 1', function(out) {
         if (out.match(/.*worker \d+ listening on.*/ig)) {
           listenCount++;
 
