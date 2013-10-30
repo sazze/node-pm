@@ -12,7 +12,7 @@ var optimist = require('optimist');
 var config = require('../lib/config');
 
 var options = optimist
-  .usage('Run a node app in style\n\nUsage: $0 [app start script]')
+  .usage('Run a node app in style\n\nUsage: $0 [app start script]\n\nVersion: ' + require('../package.json').version)
   .boolean('s').alias('s', 'silent').default('s', false).describe('s', 'silence workers')
   .boolean('v').default('v', []).describe('v', 'show more verbose output.  most verbose output: -vvv')
   .alias('n', 'numProc').default('n', 0).describe('n', 'number of workers to spawn')
