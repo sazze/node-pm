@@ -30,35 +30,70 @@ describe('Worker Manager', function() {
   });
 
   describe('event listening', function() {
-    it.skip('should call exit when process is killed hard', function(done) {
-      var master = pm.start({n: 1, v: [], s: true, _: ['./test/scripts/httpServer.js']});
-      var workerId = 0;
-      var doneCount = 0;
+    it('should re-spawn child process if it is killed hard', function(done) {
+      var killSent = false;
 
-      master.cluster.once('exit', function(worker) {
-        expect(worker.id).to.equal(workerId);
-        expect(worker.suicide).to.equal(false);
-        done();
-      });
+      spawn('pid.js -n 1 -v', function (out) {
+        var matches;
+        var pid;
 
-      master.cluster.once('listening', function(worker) {
-        workerId = worker.id;
-        process.kill(worker.process.pid, 'SIGKILL');
+        if ((matches = out.match(/.*pid: (\d+)/i))) {
+          pid = matches[1];
+        }
+
+        if (!pid) {
+          return;
+        }
+
+        if (!killSent) {
+          killSent = true;
+
+          setTimeout(function() {
+            process.kill(pid, 'SIGKILL');
+          }, 50);
+        }
+
+        if ((matches = out.match(/.*worker (\d+) exited.  Restarting..../))) {
+          expect(matches[1]).to.equal(pid);
+          done();
+          return 'kill';
+        }
       });
     });
 
-    it.skip('should call exit when child process exits', function(done) {
-      var master = pm.start({n: 1, v: [true], s: true, _: ['./test/scripts/childExit.js']});
+    it('should call exit when child process exits', function(done) {
+      spawn('childExit.js -n 1 -vvv', function(out) {
+        var matches;
+        var pid;
 
-      master.cluster.once('exit', function(worker) {
-        expect(worker.suicide).to.equal(false);
-        done();
+        if ((matches = out.match(/.*pid: (\d+)/i))) {
+          pid = matches[1];
+        }
+
+        if (!pid) {
+          return;
+        }
+
+        if ((matches = out.match(/.*worker (\d+) exit/))) {
+          expect(matches[1]).to.equal(pid);
+        }
+
+        if (out.match(/.*worker \d+ committed suicide/)) {
+          done('worker should not commit suicide');
+          return 'kill';
+        }
+
+        if (out.match(/.*worker \d+ Exit Code: \d+/)) {
+          expect(out).to.match(new RegExp('.*worker ' + pid + ' Exit Code: \\d+'));
+          done();
+          return 'kill';
+        }
       });
     });
 
     it('should kill the forked processes', function(done) {
       spawn('pid.js -n 1', function(out) {
-        var pid = parseInt(out, 10)
+        var pid = parseInt(out.replace(/\D/g, ''), 10)
         this.on('exit', function() {
           setTimeout(function() {
             try {
