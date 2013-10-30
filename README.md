@@ -1,4 +1,4 @@
-node-pm [![Build Status](https://travis-ci.org/sazze/node-pm.png?branch=master)](https://travis-ci.org/sazze/node-pm)
+node-pm [![Build Status](https://travis-ci.org/sazze/node-pm.png?branch=master/master)](https://travis-ci.org/sazze/node-pm)
 ====================
 
 Run your nodejs service in style (think php-fpm for nodejs)
