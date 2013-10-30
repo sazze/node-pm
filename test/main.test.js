@@ -1,6 +1,7 @@
 var expect = require('chai').expect;
 var path = require('path');
 var child = require('child_process');
+var _ = require('underscore');
 
 describe('Worker Manager', function() {
   "use strict";
@@ -155,6 +156,40 @@ describe('Worker Manager', function() {
           }
 
           expect(listenCount).to.be.below(3);
+        }
+      });
+    });
+
+    it('should restart workers after lifecycle timeout', function(done) {
+      this.timeout(3000);
+      var timeoutPIDS = [];
+      var restartPIDS = [];
+
+      ps = spawn('shutdown.js -vvv -n 4 --tMaxAge 1000', function(out) {
+        var matches;
+        while ((matches = out.match(/.*worker (\d+) has reached the end of it's life/))) {
+          var pid = parseInt(matches[1]);
+          if (!_.contains(timeoutPIDS, pid)) {
+            timeoutPIDS.push(pid);
+          }
+
+          out = out.replace(matches[0], '');
+        }
+
+        while ((matches = out.match(/.*worker (\d+) exited.  Restarting/))) {
+          var pid = parseInt(matches[1]);
+          if (!_.contains(restartPIDS, pid)) {
+            restartPIDS.push(pid);
+          }
+
+          if (restartPIDS.length == 4) {
+            expect(restartPIDS).to.have.members(timeoutPIDS);
+            expect(timeoutPIDS).to.have.members(restartPIDS);
+            done();
+            return 'kill';
+          }
+
+          out = out.replace(matches[0], '');
         }
       });
     });
