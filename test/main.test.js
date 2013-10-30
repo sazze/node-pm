@@ -1,22 +1,23 @@
 var expect = require('chai').expect;
 var path = require('path');
-var cluster = require('cluster');
+var child = require('child_process');
 
 describe('Worker Manager', function() {
   "use strict";
-  var pm = null;
-
-  beforeEach(function() {
-    pm = require('..');
-  });
 
   describe('during startup', function() {
-    it('should require a start script', function() {
-      expect(pm.start.bind(pm.start, {s: true})).to.throw('app start script must be specified');
+    it('should require a start script', function(done) {
+      spawn('', function(out) {
+          expect(out).to.match(/.*app start script must be specified/);
+          done();
+      });
     });
 
-    it('should require an existing start script', function() {
-      expect(pm.start.bind(pm.start, {s: true, _: ['fake.js']})).to.throw('cannot file application start script: fake.js');
+    it('should require an existing start script', function(done) {
+      spawn('fake.js', function(out) {
+        expect(out).to.match(/.*cannot find application start script: fake.js/);
+        done();
+      });
     });
 
     it('should set default timeouts', function() {
@@ -26,38 +27,10 @@ describe('Worker Manager', function() {
       expect(config.timeouts).to.have.property('stop').and.to.equal(30000);
       expect(config.timeouts).to.have.property('maxAge').and.to.equal(1800000);
     });
-
-    it('should spawn 4 workers', function(done) {
-      var numProcs = 4;
-      var onlineCount = 0;
-      var master = pm.start({v: false, n: numProcs, _: ['./test/scripts/httpServer.js']});
-
-      master.cluster.on('listening', function(worker, address) {
-        onlineCount++;
-
-        if (onlineCount == numProcs) {
-          expect(master.count).to.equal(numProcs);
-          setTimeout(done, 0);
-        }
-      });
-    });
-
-    it('should listen on more than one port', function(done) {
-      var listenCount = 0;
-      var master = pm.start({v: false, n: 1, _: ['./test/scripts/multipleHttpServers.js']});
-
-      master.cluster.on('listening', function(worker, address) {
-        listenCount++;
-
-        if (listenCount == 2) {
-          done();
-        }
-      });
-    });
   });
 
   describe('event listening', function() {
-    it('should call exit when process is killed hard', function(done) {
+    it.skip('should call exit when process is killed hard', function(done) {
       var master = pm.start({n: 1, v: false, s: true, _: ['./test/scripts/httpServer.js']});
       var workerId = 0;
       var doneCount = 0;
@@ -65,7 +38,6 @@ describe('Worker Manager', function() {
       master.cluster.once('exit', function(worker) {
         expect(worker.id).to.equal(workerId);
         expect(worker.suicide).to.equal(false);
-        //doneCount++;
         done();
       });
 
@@ -74,22 +46,96 @@ describe('Worker Manager', function() {
         process.kill(worker.process.pid, 'SIGKILL');
       });
     });
+
+    it.skip('should call exit when child process exits', function(done) {
+      var master = pm.start({n: 1, v: true, s: true, _: ['./test/scripts/childExit.js']});
+
+      master.cluster.once('exit', function(worker) {
+        expect(worker.suicide).to.equal(false);
+        done();
+      });
+    });
+
+    it('should kill the forked processes', function(done) {
+      spawn('pid.js -n 1', function(out) {
+        var pid = parseInt(out, 10)
+        this.on('exit', function() {
+          setTimeout(function() {
+            try {
+              process.kill(pid)
+              done('child must no longer run')
+            } catch(e) {
+              done()
+            }
+          }, 500)
+        })
+        return 'kill'
+      });
+    });
   });
 
-
-  afterEach(function(done) {
-    if (pm.isRunning) {
-      pm.stop(function() {
-        pm =  null;
-
-        // Delete Cache Keys
-        delete require.cache[require.resolve('../lib/config')];
-
-        // Wait for next loop
-        setTimeout(done, 0);
+  describe('while running', function() {
+    it('should spawn 4 workers', function(done) {
+      spawn('httpServer.js --vv', function(out) {
+        if (out.match(/.*\d+ workers.*online/ig)) {
+          expect(out).to.match(/.*\d+ workers.*online/ig);
+          done();
+          return 'kill';
+        }
       });
-    } else {
-      done();
-    }
+    });
+
+    it('should listen on more than one port', function(done) {
+      var listenCount = 0;
+      spawn('multipleHttpServers.js --vvv -n 1', function(out) {
+        if (out.match(/.*worker \d+ listening on.*/ig)) {
+          listenCount++;
+
+          if (listenCount == 2) {
+            done();
+            return 'kill';
+          }
+
+          expect(listenCount).to.be.below(3);
+        }
+      });
+    });
   });
 });
+
+/**
+ * Spawn a new process with cmd.  Will call callback on
+ * data from stdout.  To kill spawn return 'kill' from
+ * callback function.  if you return a function it will call
+ * that function on next output.
+ *
+ * @param cmd the command to run
+ * @param cb the callback function
+ *
+ * @returns {child_process}
+ */
+function spawn(cmd, cb) {
+  var ps = child.spawn(__dirname + '/../bin/node-pm', cmd.split(' '), { cwd: __dirname + '/scripts' });
+  var out = '';
+
+  if (typeof cb === 'function') {
+    ps.stdout.on('data', function(data) {
+      out += data.toString();
+
+      if (!cb) {
+        return;
+      }
+
+      // Call the callback since we are done spawning
+      var response = cb.call(ps, out);
+
+      if (typeof response === 'function') {
+        cb = response;
+      } else if (response == 'kill') {
+        cb = null;
+        ps.kill();
+      }
+    });
+  }
+  return ps
+}
