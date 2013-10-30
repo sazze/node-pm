@@ -28,6 +28,28 @@ describe('Worker Manager', function() {
       expect(config.timeouts).to.have.property('stop').and.to.equal(30000);
       expect(config.timeouts).to.have.property('maxAge').and.to.equal(1800000);
     });
+
+    it('should override default timeouts', function (done) {
+      ps = spawn('httpServer.js -n 1 -vvv --tStart 15000 --tStop 10000 --tMaxAge 900000', function(out) {
+        var matches;
+
+        if ((matches = out.match(/.*node-pm options: (\{.*\})/))) {
+          var options = JSON.parse(matches[1]);
+
+          expect(options).to.have.property('timeouts');
+          expect(options.timeouts).to.have.property('start').and.to.equal(15000);
+          expect(options.timeouts).to.have.property('stop').and.to.equal(10000);
+          expect(options.timeouts).to.have.property('maxAge').and.to.equal(900000);
+
+          expect(options).to.not.have.property('tStart');
+          expect(options).to.not.have.property('tStop');
+          expect(options).to.not.have.property('tMaxAge');
+
+          done();
+          return 'kill';
+        }
+      });
+    });
   });
 
   describe('event listening', function() {
