@@ -1,7 +1,7 @@
 {
   "name": "node-pm",
   "preferGlobal": true,
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "A better worker process manager",
   "main": "./lib/main.js",
   "homepage": "",
@@ -25,9 +25,10 @@
     "chai": ">=1.5.0"
   },
   "keywords": [
-    "logging",
-    "sysadmin",
-    "tools"
+    "cluster",
+    "worker",
+    "manager",
+    "process"
   ],
   "bugs": {
     "url": "https://github.com/sazze/node-pm/issues"
@@ -45,5 +46,6 @@
   "license": "MIT",
   "bin": {
     "node-pm": "./bin/node-pm"
-  }
+  },
+  "man": "./man/node-pm.1"
 }
