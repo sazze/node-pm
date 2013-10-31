@@ -3,20 +3,21 @@ var path = require('path');
 var child = require('child_process');
 var _ = require('underscore');
 
+var ps;
+
 describe('Worker Manager', function() {
   "use strict";
-  var ps;
 
   describe('during startup', function() {
     it('should require a start script', function(done) {
-      ps = spawn('', function(out) {
+      spawn('', function(out) {
           expect(out).to.match(/.*app start script must be specified/);
           done();
       });
     });
 
     it('should require an existing start script', function(done) {
-      ps = spawn('fake.js', function(out) {
+      spawn('fake.js', function(out) {
         expect(out).to.match(/.*cannot find application start script: fake.js/);
         done();
       });
@@ -31,7 +32,7 @@ describe('Worker Manager', function() {
     });
 
     it('should override default timeouts', function (done) {
-      ps = spawn('httpServer.js -n 1 -vvv --tStart 15000 --tStop 10000 --tMaxAge 900000', function(out) {
+      spawn('httpServer.js -n 1 -vvv --tStart 15000 --tStop 10000 --tMaxAge 900000', function(out) {
         var matches;
 
         if ((matches = out.match(/.*node-pm options: (\{.*\})/))) {
@@ -51,13 +52,37 @@ describe('Worker Manager', function() {
         }
       });
     });
+
+    it('should have different max age timers for each worker', function(done) {
+      var timers = [];
+      spawn('httpServer.js -n 4 -vv', function(line) {
+        var matches;
+        while ((matches = line.match(/.*Setting \d+ lifecycle timer to (\d+)/))) {
+          var timeout = parseInt(matches[1]);
+          if (!_.contains(timers, timeout)) {
+            timers.push(timeout);
+          }
+
+          line = line.replace(matches[0], '');
+        }
+
+        if (timers.length == 4) {
+          var unique = _.uniq(timers);
+
+          expect(unique).to.have.members(timers);
+          expect(timers).to.have.members(unique);
+          done();
+          return 'kill';
+        }
+      });
+    })
   });
 
   describe('event listening', function() {
     it('should re-spawn child process if it is killed hard', function(done) {
       var killSent = false;
 
-      ps = spawn('pid.js -n 1 -v', function (out) {
+      spawn('pid.js -n 1 -v', function (out) {
         var matches;
         var pid;
 
@@ -86,7 +111,7 @@ describe('Worker Manager', function() {
     });
 
     it('should call exit when child process exits', function(done) {
-      ps = spawn('childExit.js -n 1 -vvv', function(out) {
+      spawn('childExit.js -n 1 -vvv', function(out) {
         var matches;
         var pid;
 
@@ -116,7 +141,7 @@ describe('Worker Manager', function() {
     });
 
     it('should kill the forked processes', function(done) {
-      ps = spawn('pid.js -n 1', function(out) {
+      spawn('pid.js -n 1', function(out) {
         var pid = parseInt(out.replace(/\D/g, ''), 10)
         this.on('exit', function() {
           setTimeout(function() {
@@ -135,7 +160,7 @@ describe('Worker Manager', function() {
 
   describe('while running', function() {
     it('should spawn 4 workers', function(done) {
-      ps = spawn('httpServer.js -vv -n 4', function(out) {
+      spawn('httpServer.js -vv -n 4', function(out) {
         if (out.match(/.*\d+ workers.*online/ig)) {
           expect(out).to.match(/.*4 workers.*online/ig);
           done();
@@ -146,7 +171,7 @@ describe('Worker Manager', function() {
 
     it('should listen on more than one port', function(done) {
       var listenCount = 0;
-      ps = spawn('multipleHttpServers.js -vvv -n 1', function(out) {
+      spawn('multipleHttpServers.js -vvv -n 1', function(out) {
         if (out.match(/.*worker \d+ listening on.*/ig)) {
           listenCount++;
 
@@ -165,7 +190,7 @@ describe('Worker Manager', function() {
       var timeoutPIDS = [];
       var restartPIDS = [];
 
-      ps = spawn('shutdown.js -vvv -n 4 --tMaxAge 1000', function(out) {
+      spawn('shutdown.js -vvv -n 4 --tMaxAge 200 --tStart 100 --tStop 100', function(out) {
         var matches;
         while ((matches = out.match(/.*worker (\d+) has reached the end of it's life/))) {
           var pid = parseInt(matches[1]);
@@ -195,9 +220,44 @@ describe('Worker Manager', function() {
     });
   });
 
+  describe('during shutdown', function() {
+    it('should call shutdown', function(done) {
+      var kill = 0;
+      spawn('httpServer.js -vvv -n 1', function(line) {
+        if (line.match(/1 workers are now listening/) && kill < 1) {
+          kill++;
+          process.kill(ps.pid);
+        }
+
+        if (line.match(/Shutting down/)) {
+          done();
+          return 'kill';
+        }
+      });
+    });
+
+    it('should kill long living connections', function(done) {
+      var killed = 0;
+
+      spawn('longLive.js --tStop 200 --tStart 100 --tStop 100 -vvv -n 1', function(out) {
+
+        if (out.match(/sever is now listening/) && killed < 1) {
+          killed++;
+          process.kill(ps.pid);
+        }
+      })
+        .once('exit', function() {
+          done();
+        });
+    });
+  });
+
   afterEach(function() {
     try {
-      ps.kill();
+      if (ps) {
+        ps.kill();
+        ps = null;
+      }
     } catch (e) {
       //ignore these errors
     }
@@ -211,32 +271,57 @@ describe('Worker Manager', function() {
  * that function on next output.
  *
  * @param cmd the command to run
- * @param cb the callback function
+ * @param cb the callback function with either a out or line parameter
  *
  * @returns {child_process}
  */
 function spawn(cmd, cb) {
-  var ps = child.spawn(__dirname + '/../bin/node-pm', cmd.split(' '), { cwd: __dirname + '/scripts' });
+  ps = child.spawn(__dirname + '/../bin/node-pm', cmd.split(' '), { cwd: __dirname + '/scripts' });
   var out = '';
 
   if (typeof cb === 'function') {
     ps.stdout.on('data', function(data) {
-      out += data.toString();
+      var line = data.toString();
+      out += line;
 
       if (!cb) {
         return;
       }
 
+      // Determine which output they want
+      var paramNames = getParameterName(cb);
+      var param = out;
+      if (paramNames.length == 1 && paramNames[0] == 'line') {
+        param = line;
+      }
+
       // Call the callback since we are done spawning
-      var response = cb.call(ps, out);
+      var response = cb.call(ps, param);
 
       if (typeof response === 'function') {
         cb = response;
       } else if (response == 'kill') {
         cb = null;
-        ps.kill();
+        process.kill(ps.pid);
+      } else if (response === false) {
+        cb = null;
       }
     });
   }
   return ps
+}
+
+/**
+ * Returns the parameter names of a function
+ *
+ * @param fn
+ * @returns {Array}
+ */
+function getParameterName(fn) {
+  "use strict";
+  var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+  var fnStr = fn.toString().replace(STRIP_COMMENTS, '')
+  var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(/([^\s,]+)/g)
+
+  return result === null ? [] : result;
 }
