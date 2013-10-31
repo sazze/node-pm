@@ -190,10 +190,13 @@ describe('Worker Manager', function() {
       var timeoutPIDS = [];
       var restartPIDS = [];
 
-      spawn('shutdown.js -vvv -n 4 --tMaxAge 200 --tStart 100 --tStop 100', function(out) {
+      spawn('shutdown.js -vvv -n 4 --tMaxAge 400 --tStart 200 --tStop 200', function(out) {
         var matches;
+        var pid;
+
         while ((matches = out.match(/.*worker (\d+) has reached the end of it's life/))) {
-          var pid = parseInt(matches[1]);
+          pid = parseInt(matches[1]);
+
           if (!_.contains(timeoutPIDS, pid)) {
             timeoutPIDS.push(pid);
           }
@@ -202,19 +205,20 @@ describe('Worker Manager', function() {
         }
 
         while ((matches = out.match(/.*worker (\d+) exited.  Restarting/))) {
-          var pid = parseInt(matches[1]);
+          pid = parseInt(matches[1]);
+
           if (!_.contains(restartPIDS, pid)) {
             restartPIDS.push(pid);
           }
 
-          if (restartPIDS.length == 4) {
-            expect(restartPIDS).to.have.members(timeoutPIDS);
-            expect(timeoutPIDS).to.have.members(restartPIDS);
-            done();
-            return 'kill';
-          }
-
           out = out.replace(matches[0], '');
+        }
+
+        if (restartPIDS.length == 4 && timeoutPIDS.length == 4) {
+          expect(restartPIDS).to.have.members(timeoutPIDS);
+          expect(timeoutPIDS).to.have.members(restartPIDS);
+          done();
+          return 'kill';
         }
       });
     });
@@ -246,9 +250,9 @@ describe('Worker Manager', function() {
           process.kill(ps.pid);
         }
       })
-        .once('exit', function() {
-          done();
-        });
+      .once('exit', function() {
+        done();
+      });
     });
   });
 
