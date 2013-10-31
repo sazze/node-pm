@@ -140,19 +140,52 @@ describe('Worker Manager', function() {
       });
     });
 
-    it('should kill the forked processes', function(done) {
-      spawn('pid.js -n 1', function(out) {
-        var pid = parseInt(out.replace(/\D/g, ''), 10)
-        this.on('exit', function() {
+    it('should check that forked processes are running', function(done) {
+      var pid;
+      var killed = false;
+      var outObj = {};
+
+      spawn('pid.js -n 1 -vvv', function(out) {
+        var matches;
+
+        if (!pid && (matches = out.match(/.*pid: (\d+)/i))) {
+          pid = matches[1];
+        }
+
+        if (!pid) {
+          return;
+        }
+
+        outObj.out = out;
+
+        if (!killed) {
+          killed = true;
+
+          this.on('exit', function () {
+            expect(outObj.out).to.match(new RegExp('worker ' + pid + ' is running'));
+            done();
+          });
+
           setTimeout(function() {
+            process.kill(ps.pid, 'SIGTERM');
+          }, 500);
+        }
+      });
+    });
+
+    it('should kill the forked processes', function(done) {
+      spawn('pid.js -n 1', function (out) {
+        var pid = parseInt(out.replace(/\D/g, ''), 10);
+        this.on('exit', function () {
+          setTimeout(function () {
             try {
-              process.kill(pid)
-              done('child must no longer run')
-            } catch(e) {
-              done()
+              process.kill(pid);
+              done('child must no longer run');
+            } catch (e) {
+              done();
             }
-          }, 500)
-        })
+          }, 500);
+        });
         return 'kill'
       });
     });
