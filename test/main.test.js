@@ -140,19 +140,52 @@ describe('Worker Manager', function() {
       });
     });
 
-    it('should kill the forked processes', function(done) {
-      spawn('pid.js -n 1', function(out) {
-        var pid = parseInt(out.replace(/\D/g, ''), 10)
-        this.on('exit', function() {
+    it('should check that forked processes are running', function(done) {
+      var pid;
+      var killed = false;
+      var outObj = {};
+
+      spawn('pid.js -n 1 -vvv', function(out) {
+        var matches;
+
+        if (!pid && (matches = out.match(/.*pid: (\d+)/i))) {
+          pid = matches[1];
+        }
+
+        if (!pid) {
+          return;
+        }
+
+        outObj.out = out;
+
+        if (!killed) {
+          killed = true;
+
+          this.on('exit', function () {
+            expect(outObj.out).to.match(new RegExp('worker ' + pid + ' is running'));
+            done();
+          });
+
           setTimeout(function() {
+            process.kill(ps.pid, 'SIGTERM');
+          }, 500);
+        }
+      });
+    });
+
+    it('should kill the forked processes', function(done) {
+      spawn('pid.js -n 1', function (out) {
+        var pid = parseInt(out.replace(/\D/g, ''), 10);
+        this.on('exit', function () {
+          setTimeout(function () {
             try {
-              process.kill(pid)
-              done('child must no longer run')
-            } catch(e) {
-              done()
+              process.kill(pid);
+              done('child must no longer run');
+            } catch (e) {
+              done();
             }
-          }, 500)
-        })
+          }, 500);
+        });
         return 'kill'
       });
     });
@@ -190,10 +223,13 @@ describe('Worker Manager', function() {
       var timeoutPIDS = [];
       var restartPIDS = [];
 
-      spawn('shutdown.js -vvv -n 4 --tMaxAge 200 --tStart 100 --tStop 100', function(out) {
+      spawn('shutdown.js -vvv -n 4 --tMaxAge 400 --tStart 200 --tStop 200', function(out) {
         var matches;
+        var pid;
+
         while ((matches = out.match(/.*worker (\d+) has reached the end of it's life/))) {
-          var pid = parseInt(matches[1]);
+          pid = parseInt(matches[1]);
+
           if (!_.contains(timeoutPIDS, pid)) {
             timeoutPIDS.push(pid);
           }
@@ -202,19 +238,20 @@ describe('Worker Manager', function() {
         }
 
         while ((matches = out.match(/.*worker (\d+) exited.  Restarting/))) {
-          var pid = parseInt(matches[1]);
+          pid = parseInt(matches[1]);
+
           if (!_.contains(restartPIDS, pid)) {
             restartPIDS.push(pid);
           }
 
-          if (restartPIDS.length == 4) {
-            expect(restartPIDS).to.have.members(timeoutPIDS);
-            expect(timeoutPIDS).to.have.members(restartPIDS);
-            done();
-            return 'kill';
-          }
-
           out = out.replace(matches[0], '');
+        }
+
+        if (restartPIDS.length == 4 && timeoutPIDS.length == 4) {
+          expect(restartPIDS).to.have.members(timeoutPIDS);
+          expect(timeoutPIDS).to.have.members(restartPIDS);
+          done();
+          return 'kill';
         }
       });
     });
@@ -246,9 +283,9 @@ describe('Worker Manager', function() {
           process.kill(ps.pid);
         }
       })
-        .once('exit', function() {
-          done();
-        });
+      .once('exit', function() {
+        done();
+      });
     });
   });
 
