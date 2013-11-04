@@ -130,7 +130,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-7">line 7</a>
+        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-17">line 17</a>
     </li></ul></dd>
     
 
@@ -156,124 +156,77 @@
 
     
 
-    
-        <h3 class="subsection-title">Members</h3>
-
-        <dl>
-            
-<dt>
-    <h4 class="name" id="cluster"><span class="type-signature">&lt;inner> </span>cluster<span class="type-signature"></span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>get the cluster object</p>
-    </div>
-    
-    
-    
-
-    
-<dl class="details">
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-105">line 105</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="count"><span class="type-signature">&lt;inner> </span>count<span class="type-signature"></span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Get number of workers</p>
-    </div>
-    
-    
-    
-
-    
-<dl class="details">
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-114">line 114</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-    
-    
-</dd>
-
-        </dl>
     
 
     
         <h3 class="subsection-title">Methods</h3>
 
         <dl>
+            
+<dt>
+    <h4 class="name" id="cleanup"><span class="type-signature">&lt;private, inner> </span>cleanup<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-331">line 331</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
             
 <dt>
     <h4 class="name" id="fork"><span class="type-signature">&lt;private, inner> </span>fork<span class="signature">(<span class="optional">number</span>)</span><span class="type-signature"></span></h4>
@@ -386,7 +339,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-126">line 126</a>
+        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-293">line 293</a>
     </li></ul></dd>
     
 
@@ -414,7 +367,7 @@
         
             
 <dt>
-    <h4 class="name" id="start"><span class="type-signature">&lt;inner> </span>start<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="get"><span class="type-signature">&lt;inner> </span>get<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
     
     
 </dt>
@@ -422,7 +375,7 @@
     
     
     <div class="description">
-        <p>Start the master and fork childs</p>
+        <p>Get number of workers</p>
     </div>
     
 
@@ -455,7 +408,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-54">line 54</a>
+        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-38">line 38</a>
     </li></ul></dd>
     
 
@@ -476,6 +429,25 @@
     
     
     
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">number</span>
+
+
+	</dd>
+</dl>
+
+
+        
     
     
 </dd>
@@ -483,7 +455,7 @@
         
             
 <dt>
-    <h4 class="name" id="stop"><span class="type-signature">&lt;inner> </span>stop<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="get"><span class="type-signature">&lt;inner> </span>get<span class="signature">()</span><span class="type-signature"> &rarr; {*}</span></h4>
     
     
 </dt>
@@ -491,7 +463,7 @@
     
     
     <div class="description">
-        <p>Disconnectworkers and exit</p>
+        <p>get the cluster object</p>
     </div>
     
 
@@ -524,7 +496,95 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-94">line 94</a>
+        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-55">line 55</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">*</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="lifecycleTimeoutHandler"><span class="type-signature">&lt;private, inner> </span>lifecycleTimeoutHandler<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Called when workers have reached the end of their lifespan</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="master.js.html">master.js</a>, <a href="master.js.html#sunlight-1-line-310">line 310</a>
     </li></ul></dd>
     
 
@@ -575,7 +635,7 @@
 					
 		<span class="jsdoc-message">
 		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.1</a>
-		on Wed Oct 30 2013 10:09:09 GMT-0700 (PDT) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		on Mon Nov 04 2013 13:17:36 GMT-0800 (PST) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>

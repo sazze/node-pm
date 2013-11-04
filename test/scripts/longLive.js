@@ -1,12 +1,14 @@
 var http = require('http');
-http
-  .createServer(function() {
+var server = http.createServer(function() {
+  "use strict";
+  // Never end
+});
+
+server.listen(0, function() {
     "use strict";
-    // Never end
-  })
-  .listen(59741, function(address) {
-    "use strict";
-    console.log('sever is now listening');
-    http.get('http://127.0.0.1:59741/');
-  });
+  var address = server.address();
+
+  console.log('sever is now listening on %s:%d', address.address, address.port);
+  http.get('http://127.0.0.1:' + address.port + '/');
+});
 

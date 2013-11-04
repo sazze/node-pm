@@ -52,100 +52,239 @@ describe('Worker Manager', function() {
         }
       });
     });
-
-    it('should have different max age timers for each worker', function(done) {
-      var timers = [];
-      spawn('httpServer.js -n 4 -vv', function(line) {
-        var matches;
-        while ((matches = line.match(/.*Setting \d+ lifecycle timer to (\d+)/))) {
-          var timeout = parseInt(matches[1]);
-          if (!_.contains(timers, timeout)) {
-            timers.push(timeout);
-          }
-
-          line = line.replace(matches[0], '');
-        }
-
-        if (timers.length == 4) {
-          var unique = _.uniq(timers);
-
-          expect(unique).to.have.members(timers);
-          expect(timers).to.have.members(unique);
-          done();
-          return 'kill';
-        }
-      });
-    })
   });
 
   describe('event listening', function() {
+    it('should send the start event', function(done) {
+      var started = true;
+
+      spawn('httpServer.js -n 1 -vvv');
+
+      ps.on('start', function() {
+        started = true;
+      });
+
+      ps.on('cluster:listening', function() {
+        expect(started).to.equal(true);
+        ps.kill();
+        done();
+      });
+    });
+
     it('should re-spawn child process if it is killed hard', function(done) {
-      var killSent = false;
+      var pid;
 
-      spawn('pid.js -n 1 -v', function (out) {
-        var matches;
-        var pid;
+      spawn('pid.js -n 1');
 
-        if ((matches = out.match(/.*pid: (\d+)/i))) {
-          pid = matches[1];
-        }
+      ps.once('cluster:online', function(worker) {
+        pid = worker.process.pid;
+      });
 
-        if (!pid) {
-          return;
-        }
+      ps.once('cluster:listening', function(worker) {
+        expect(worker.process.pid).to.equal(pid);
 
-        if (!killSent) {
-          killSent = true;
+        ps.once('cluster:listening', function(worker) {
+          expect(worker.process.pid).not.to.equal(pid);
 
-          setTimeout(function() {
-            process.kill(pid, 'SIGKILL');
-          }, 50);
-        }
+          ps.kill();
 
-        if ((matches = out.match(/.*worker (\d+) exited.  Restarting..../))) {
-          expect(matches[1]).to.equal(pid);
-          done();
-          return 'kill';
-        }
+          ps.once('exit', function() {
+            done();
+          });
+        });
+
+        setTimeout(function () {
+          process.kill(worker.process.pid, 'SIGKILL');
+        }, 50);
       });
     });
 
     it('should call exit when child process exits', function(done) {
-      spawn('childExit.js -n 1 -vvv', function(out) {
-        var matches;
-        var pid;
+      var pid;
 
-        if ((matches = out.match(/.*pid: (\d+)/i))) {
-          pid = matches[1];
-        }
+      spawn('childExit.js -n 1');
 
-        if (!pid) {
-          return;
-        }
+      ps.once('cluster:online', function(worker) {
+        pid = worker.process.pid;
+      });
 
-        if ((matches = out.match(/.*worker (\d+) exit/))) {
-          expect(matches[1]).to.equal(pid);
-        }
-
-        if (out.match(/.*worker \d+ committed suicide/)) {
-          done('worker should not commit suicide');
-          return 'kill';
-        }
-
-        if (out.match(/.*worker \d+ Exit Code: \d+/)) {
-          expect(out).to.match(new RegExp('.*worker ' + pid + ' Exit Code: \\d+'));
-          done();
-          return 'kill';
-        }
+      ps.once('cluster:exit', function(worker) {
+        expect(worker.suicide).to.equal(false);
+        expect(worker.process.pid).to.equal(pid);
+        ps.kill();
+        done();
       });
     });
 
-    it('should check that forked processes are running', function(done) {
+    it('should kill the forked processes', function(done) {
+      spawn('pid.js -n 1');
+
+      ps.once('exit', function(worker) {
+        setTimeout(function() {
+          try {
+            process.kill(worker.process.pid);
+            done('child must no longer run');
+          } catch (e) {
+            done();
+          }
+        }, 500);
+      });
+
+      ps.once('cluster:listening', function() {
+        ps.kill();
+      });
+    });
+  });
+
+  describe('while running', function() {
+    it('should spawn 4 workers', function(done) {
+      var listenCount = 0;
+
+      spawn('httpServer.js -n 4');
+
+      ps.on('cluster:listening', function(worker) {
+        listenCount++;
+
+        if (listenCount == 4) {
+          ps.kill();
+        }
+      });
+
+      ps.once('exit', function() {
+        expect(listenCount).to.equal(4);
+        done();
+      });
+    });
+
+    it('should listen on more than one port', function(done) {
+      var listenObjects = [];
+      var pid;
+
+      spawn('multipleHttpServers.js -n 1');
+
+      ps.once('cluster:online', function(worker) {
+        pid = worker.process.pid;
+      });
+
+      ps.on('cluster:listening', function(worker, address) {
+        expect(worker.process.pid).to.equal(pid);
+
+        if (listenObjects.length < 1) {
+          listenObjects.push(address);
+          return;
+        }
+
+        expect(listenObjects).to.not.include.members([address]);
+
+        listenObjects.push(address);
+
+        if (listenObjects.length == 2) {
+          ps.kill();
+        }
+      });
+
+      ps.once('cluster:exit', function(worker) {
+        expect(worker.process.pid).to.equal(pid);
+        expect(listenObjects.length).to.equal(2);
+        done();
+      })
+    });
+
+    it('should restart workers after lifecycle timeout', function(done) {
+      this.timeout(5000);
+      var pids = [];
+
+      spawn('../../lib/worker.js -n 4 --tMaxAge 800 --tStart 400 --tStop 400');
+
+      ps.on('cluster:online', function(worker) {
+        pids.push(worker.process.pid);
+      });
+
+      ps.on('restart', function() {
+        ps.kill();
+
+        ps.once('exit', function() {
+          expect(pids.length).to.equal(8);
+          done();
+        });
+      });
+    });
+
+    it('should re-register the lifecycle timeout', function (done) {
+      this.timeout(5000);
+
+      var pids = [];
+      var restartCount = 0;
+
+      spawn('../../lib/worker.js -n 4 --tMaxAge 800 --tStart 400 --tStop 400');
+
+      ps.on('cluster:online', function (worker) {
+        pids.push(worker.process.pid);
+      });
+
+      ps.on('restart', function () {
+        restartCount++;
+
+        if (restartCount == 2) {
+          ps.kill();
+
+          ps.once('exit', function () {
+            expect(pids.length).to.equal(12);
+            expect(restartCount).to.equal(2);
+            done();
+          });
+        }
+      });
+    });
+  });
+
+  describe('during shutdown', function() {
+    it('should call shutdown', function(done) {
+      var shutdown = 0;
+
+      spawn('httpServer.js -n 1');
+
+      ps.on('shutdown', function() {
+        shutdown++;
+      });
+
+      ps.once('cluster:listening', function() {
+        setTimeout(function() {
+          ps.kill();
+        }, 50);
+      });
+
+      ps.once('exit', function() {
+        expect(shutdown).to.equal(1);
+        done();
+      });
+    });
+
+    it('should kill long living connections', function(done) {
+      var pid;
+
+      spawn('longLive.js -vvv --tStop 100 -n 1');
+
+      ps.once('cluster:listening', function(worker) {
+        pid = worker.process.pid;
+        ps.kill();
+      });
+
+      ps.once('cluster:exit', function(worker) {
+        expect(worker.process.pid).to.equal(pid);
+      });
+
+      ps.once('exit', function() {
+        done();
+      });
+    });
+
+    it('should check that forked processes are running', function (done) {
       var pid;
       var killed = false;
       var outObj = {};
 
-      spawn('pid.js -n 1 -vvv', function(out) {
+      spawn('pid.js -n 1 -vvv', function (out) {
         var matches;
 
         if (!pid && (matches = out.match(/.*pid: (\d+)/i))) {
@@ -166,125 +305,10 @@ describe('Worker Manager', function() {
             done();
           });
 
-          setTimeout(function() {
+          setTimeout(function () {
             process.kill(ps.pid, 'SIGTERM');
           }, 500);
         }
-      });
-    });
-
-    it('should kill the forked processes', function(done) {
-      spawn('pid.js -n 1', function (out) {
-        var pid = parseInt(out.replace(/\D/g, ''), 10);
-        this.on('exit', function () {
-          setTimeout(function () {
-            try {
-              process.kill(pid);
-              done('child must no longer run');
-            } catch (e) {
-              done();
-            }
-          }, 500);
-        });
-        return 'kill'
-      });
-    });
-  });
-
-  describe('while running', function() {
-    it('should spawn 4 workers', function(done) {
-      spawn('httpServer.js -vv -n 4', function(out) {
-        if (out.match(/.*\d+ workers.*online/ig)) {
-          expect(out).to.match(/.*4 workers.*online/ig);
-          done();
-          return 'kill';
-        }
-      });
-    });
-
-    it('should listen on more than one port', function(done) {
-      var listenCount = 0;
-      spawn('multipleHttpServers.js -vvv -n 1', function(out) {
-        if (out.match(/.*worker \d+ listening on.*/ig)) {
-          listenCount++;
-
-          if (listenCount == 2) {
-            done();
-            return 'kill';
-          }
-
-          expect(listenCount).to.be.below(3);
-        }
-      });
-    });
-
-    it('should restart workers after lifecycle timeout', function(done) {
-      this.timeout(3000);
-      var timeoutPIDS = [];
-      var restartPIDS = [];
-
-      spawn('shutdown.js -vvv -n 4 --tMaxAge 400 --tStart 200 --tStop 200', function(out) {
-        var matches;
-        var pid;
-
-        while ((matches = out.match(/.*worker (\d+) has reached the end of it's life/))) {
-          pid = parseInt(matches[1]);
-
-          if (!_.contains(timeoutPIDS, pid)) {
-            timeoutPIDS.push(pid);
-          }
-
-          out = out.replace(matches[0], '');
-        }
-
-        while ((matches = out.match(/.*worker (\d+) exited.  Restarting/))) {
-          pid = parseInt(matches[1]);
-
-          if (!_.contains(restartPIDS, pid)) {
-            restartPIDS.push(pid);
-          }
-
-          out = out.replace(matches[0], '');
-        }
-
-        if (restartPIDS.length == 4 && timeoutPIDS.length == 4) {
-          expect(restartPIDS).to.have.members(timeoutPIDS);
-          expect(timeoutPIDS).to.have.members(restartPIDS);
-          done();
-          return 'kill';
-        }
-      });
-    });
-  });
-
-  describe('during shutdown', function() {
-    it('should call shutdown', function(done) {
-      var kill = 0;
-      spawn('httpServer.js -vvv -n 1', function(line) {
-        if (line.match(/1 workers are now listening/) && kill < 1) {
-          kill++;
-          process.kill(ps.pid);
-        }
-
-        if (line.match(/Shutting down/)) {
-          done();
-          return 'kill';
-        }
-      });
-    });
-
-    it('should kill long living connections', function(done) {
-      var killed = 0;
-
-      spawn('longLive.js --tStop 200 --tStart 100 --tStop 100 -vvv -n 1', function(out) {
-
-        if (out.match(/sever is now listening/) && killed < 1) {
-          killed++;
-          process.kill(ps.pid);
-        }
-      })
-      .once('exit', function() {
-        done();
       });
     });
   });
@@ -297,6 +321,7 @@ describe('Worker Manager', function() {
       }
     } catch (e) {
       //ignore these errors
+      ps = null;
     }
   });
 });
@@ -308,13 +333,31 @@ describe('Worker Manager', function() {
  * that function on next output.
  *
  * @param cmd the command to run
- * @param cb the callback function with either a out or line parameter
+ * @param [cb] the callback function with either a out or line parameter
  *
  * @returns {child_process}
  */
 function spawn(cmd, cb) {
-  ps = child.spawn(__dirname + '/../bin/node-pm', cmd.split(' '), { cwd: __dirname + '/scripts' });
+  ps = child.spawn(__dirname + '/../bin/node-pm', cmd.split(' '), { cwd: __dirname + '/scripts', stdio: [null, null, null, 'ipc'] });
   var out = '';
+
+  ps.on('message', function(json) {
+    var args = JSON.parse(json);
+
+    if (ps) {
+      ps.emit.apply(ps, args);
+    }
+  });
+
+  /*
+  ps.stderr.on('data', function(data) {
+    console.log(data.toString());
+  });
+
+  ps.stdout.on('data', function(data) {
+    console.log(data.toString());
+  });
+  */
 
   if (typeof cb === 'function') {
     ps.stdout.on('data', function(data) {
