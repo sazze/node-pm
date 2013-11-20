@@ -1,7 +1,7 @@
 {
   "name": "node-pm",
   "preferGlobal": true,
-  "version": "0.8.0",
+  "version": "0.8.2",
   "description": "A better worker process manager",
   "main": "./lib/main.js",
   "homepage": "",
@@ -10,7 +10,7 @@
     "docs": "jsdoc -c ./docs/template/jsdoc.conf.json"
   },
   "engines": [
-    "node >= 0.8.1"
+    "node >= 0.8.0"
   ],
   "repository": {
     "type": "git",
