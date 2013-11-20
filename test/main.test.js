@@ -236,6 +236,27 @@ describe('Worker Manager', function() {
         }
       });
     });
+
+    it('should shutdown when fork loop is detected', function(done) {
+      var shutdown = false;
+      var forkLoop = false;
+
+      spawn('childCrash.js -n 1 --tStart 100 --tStop 100');
+
+      ps.once('forkLoop', function() {
+        forkLoop = true;
+      });
+
+      ps.on('shutdown', function() {
+        shutdown = true;
+      });
+
+      ps.on('exit', function() {
+        expect(forkLoop).to.equal(true);
+        expect(shutdown).to.equal(true);
+        done();
+      });
+    });
   });
 
   describe('during shutdown', function() {
