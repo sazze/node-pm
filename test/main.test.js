@@ -257,6 +257,29 @@ describe('Worker Manager', function() {
         done();
       });
     });
+
+    it('should allow inter-process communication', function (done) {
+      var messageCount = 0;
+
+      spawn('httpServer.js -n 2 --workerMessageHandler ' + path.join(__dirname, 'scripts', 'workerMessageHandlerPubSub.js'), function (line) {
+        var msg = JSON.parse(line);
+
+        expect(msg).to.have.property('pid');
+        expect(msg).to.have.property('message');
+        expect(msg.message).to.not.contain(msg.pid);
+
+        messageCount++;
+
+        if (messageCount >= 2) {
+          return 'kill';
+        }
+      });
+
+      ps.once('exit', function () {
+        expect(messageCount).to.equal(2);
+        done();
+      });
+    });
   });
 
   describe('during shutdown', function() {
