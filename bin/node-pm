@@ -19,6 +19,7 @@ var options = optimist
   .default('tStart', 30000).describe('tStart', 'max number of milliseconds to wait for worker to start')
   .default('tStop', 30000).describe('tStop', 'max number of milliseconds to wait for worker to stop')
   .default('tMaxAge', 1800000).describe('tMaxAge', 'max number of milliseconds a worker will live')
+  .default('workerMessageHandler', '').describe('workerMessageHandler', 'the path to the module to load to handle inter-process communication between workers.  The module should export a function with signature: function(message, handle, worker)')
   .demand(1).argv;
 
 //format timeout options properly
