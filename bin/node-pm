@@ -15,6 +15,7 @@ var options = optimist
   .usage('Run a node app in style\n\nUsage: $0 [app start script]\n\nVersion: ' + require('../package.json').version)
   .boolean('s').alias('s', 'silent').default('s', false).describe('s', 'silence workers')
   .boolean('v').default('v', []).describe('v', 'show more verbose output.  most verbose output: -vvv')
+  .boolean('sticky').default('sticky', false).describe('sticky', 'Have sticky connections, uses the same worker')
   .alias('n', 'numProc').default('n', 0).describe('n', 'number of workers to spawn')
   .default('tStart', 30000).describe('tStart', 'max number of milliseconds to wait for worker to start')
   .default('tStop', 30000).describe('tStop', 'max number of milliseconds to wait for worker to stop')
