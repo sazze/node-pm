@@ -1,7 +1,7 @@
 {
   "name": "node-pm",
   "preferGlobal": true,
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "A better worker process manager",
   "main": "./lib/main.js",
   "homepage": "",
