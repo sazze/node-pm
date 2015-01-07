@@ -218,7 +218,7 @@ describe('Worker Manager', function() {
       this.timeout(5000);
       var pids = [];
 
-      spawn('restart.js -n 4 --tMaxAge 800 --tStart 400 --tStop 400');
+      spawn('restart.js -n 4 --tMaxAge 800 --tStart 400 --tStop 400 -vvv');
 
       ps.on('cluster:online', function(worker) {
         pids.push(worker.process.pid);
