@@ -1,4 +1,4 @@
-node-pm [![Build Status](https://travis-ci.org/sazze/node-pm.png?branch=master/master)](https://travis-ci.org/sazze/node-pm) [![NPM version](https://badge.fury.io/js/node-pm.png)](http://badge.fury.io/js/node-pm)
+node-pm [![Build Status](https://travis-ci.org/sazze/node-pm.png?branch=master/master)](https://travis-ci.org/sazze/node-pm) [![NPM version](https://badge.fury.io/js/node-pm.png)](http://badge.fury.io/js/node-pm) [![Code Climate](https://codeclimate.com/github/sazze/node-pm/badges/gpa.svg)](https://codeclimate.com/github/sazze/node-pm)
 ====================
 
 Run your nodejs service in style (think php-fpm for nodejs)
