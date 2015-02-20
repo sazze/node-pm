@@ -52,6 +52,30 @@ describe('Worker Manager', function() {
         }
       });
     });
+
+    it('should work with an relative path', function(done) {
+      spawn('httpServer.js -n 1');
+
+      ps.on('cluster:listening', function(worker) {
+          ps.kill();
+      });
+
+      ps.once('exit', function() {
+        done();
+      });
+    });
+
+    it('should work with an absolute path', function(done) {
+      spawn(__dirname + '/scripts/httpServer.js -n 1');
+
+      ps.on('cluster:listening', function(worker) {
+        ps.kill();
+      });
+
+      ps.once('exit', function() {
+        done();
+      });
+    });
   });
 
   describe('event listening', function() {
@@ -194,7 +218,7 @@ describe('Worker Manager', function() {
       this.timeout(5000);
       var pids = [];
 
-      spawn('restart.js -n 4 --tMaxAge 800 --tStart 400 --tStop 400');
+      spawn('restart.js -n 4 --tMaxAge 800 --tStart 400 --tStop 400 -vvv');
 
       ps.on('cluster:online', function(worker) {
         pids.push(worker.process.pid);
