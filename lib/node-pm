@@ -1,0 +1,49 @@
+
+/**
+ * Entry point for running node-pm as a daemon
+ **/
+
+var _ = require('lodash');
+var pm = require('..');
+var config = require('./config');
+var path = require('path');
+var fs = require('fs');
+
+process.once('message', function (options) {
+  if (!_.isPlainObject(options)) {
+    options = JSON.parse(options);
+  }
+
+  options = _.merge({}, options);
+
+  if (!_.isUndefined(options.d)) {
+    delete options.d;
+  }
+
+  if (!_.isUndefined(options.daemon)) {
+    delete options.daemon;
+  }
+
+  fs.writeFile(path.resolve(options.pidFile), process.pid, {mode: 0664, flag: 'wx'}, function (err) {
+    if (err) {
+      console.error('Failed to write pid file');
+      process.exit(2);
+    }
+
+    process.on('exit', function () {
+      fs.unlink(path.resolve(options.pidFile));
+    });
+
+    process.once('message', function (parentPid) {
+      setTimeout(function () {
+        process.kill(parentPid, 'SIGINT');
+      }, 1000);
+
+      pm.start(options);
+    });
+
+    process.send('pid');
+  });
+});
+
+process.send('options');

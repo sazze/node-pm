@@ -2,6 +2,7 @@ var expect = require('chai').expect;
 var path = require('path');
 var child = require('child_process');
 var _ = require('underscore');
+var fs = require('fs');
 
 var ps;
 
@@ -75,6 +76,36 @@ describe('Worker Manager', function() {
       ps.once('exit', function() {
         done();
       });
+    });
+
+    it('should run as a daemon', function (done) {
+      this.timeout(5000);
+
+      var parentExit = false;
+
+      spawn('httpServer.js -n 1 -vvv -d --pidFile ' + path.join(__dirname, 'daemon.pid'));
+
+      ps.once('exit', function () {
+        parentExit = true;
+      });
+
+      setTimeout(function () {
+        expect(parentExit).to.equal(true, 'parent did not exit');
+        expect(fs.existsSync(path.join(__dirname, 'daemon.pid'))).to.equal(true, path.join(__dirname, 'daemon.pid') + ' does not exist');
+
+        child.exec('cat ' + path.join(__dirname, 'daemon.pid'), function (err, stdout, stderr) {
+          expect(err).to.equal(null);
+          expect(stderr.length).to.equal(0);
+          expect(stdout.length).to.be.gt(0);
+
+          process.kill(parseInt(stdout.toString()), 'SIGTERM');
+
+          setTimeout(function () {
+            expect(fs.existsSync(path.join(__dirname, 'daemon.pid'))).to.equal(false, path.join(__dirname, 'daemon.pid') + ' not cleaned up');
+            done();
+          }, 500);
+        });
+      }, 1500);
     });
   });
 

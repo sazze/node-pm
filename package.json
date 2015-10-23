@@ -17,6 +17,7 @@
     "url": "https://github.com/sazze/node-pm.git"
   },
   "dependencies": {
+    "lodash": "^3.10.1",
     "optimist": "~0.6.0",
     "sand-extend": "0.0.1",
     "underscore": "~1.5.2"

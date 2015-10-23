@@ -10,9 +10,12 @@
 var pm = require('..');
 var optimist = require('optimist');
 var config = require('../lib/config');
+var cp = require('child_process');
+var path = require('path');
+var tty = require('tty');
 
 var options = optimist
-  .usage('Run a node app in style\n\nUsage: $0 [app start script]\n\nVersion: ' + require('../package.json').version)
+  .usage('Run a node app in style\n\nUsage: $0 [app start script]\n\nVersion: ' + require('../package.json').version + '\nGit repo: ' + require('../package.json').repository.url)
   .boolean('s').alias('s', 'silent').default('s', false).describe('s', 'silence workers')
   .boolean('v').default('v', []).describe('v', 'show more verbose output.  most verbose output: -vvv')
   .boolean('sticky').default('sticky', false).describe('sticky', 'Have sticky connections, uses the same worker')
@@ -21,6 +24,10 @@ var options = optimist
   .default('tStop', 30000).describe('tStop', 'max number of milliseconds to wait for worker to stop')
   .default('tMaxAge', 1800000).describe('tMaxAge', 'max number of milliseconds a worker will live')
   .default('workerMessageHandler', '').describe('workerMessageHandler', 'the path to the module to load to handle inter-process communication between workers.  The module should export a function with signature: function(message, handle, worker)')
+  .default('pidFile', path.resolve(path.join(process.cwd(), 'daemon.pid'))).describe('pidFile', 'the file to write the process id to when running as a daemon')
+  .boolean('d').alias('d', 'daemon').default('d', false).describe('d', 'run the node app as a daemon')
+  .alias('u', 'user').default('u', '').describe('u', 'the user to run as')
+  .alias('g', 'group').default('g', '').describe('g', 'the group to run as')
   .demand(1).argv;
 
 //format timeout options properly
@@ -34,4 +41,41 @@ delete options.tStart;
 delete options.tStop;
 delete options.tMaxAge;
 
-pm.start(options);
+if (options.d) {
+  // run as a daemon
+  var childSTDOUT = tty.isatty(1) ? 'ignore' : process.stdout;
+  var childSTDERR = tty.isatty(2) ? 'ignore' : process.stderr;
+
+  var childOptions = {
+    cwd: process.cwd,
+    env: process.env,
+    detached: true,
+    stdio: ['ignore', childSTDOUT, childSTDERR, 'ipc'],
+    uid: process.getuid(),
+    gid: process.getgid()
+  };
+
+  process.umask(0);
+
+  var child = cp.spawn('node', [path.resolve(path.join(__dirname, '..', 'lib', 'node-pm'))], childOptions);
+
+  child.on('message', function (message) {
+    if (message == 'options') {
+      child.send(JSON.stringify(options));
+    }
+
+    if (message == 'pid') {
+      child.send(process.pid);
+    }
+  });
+
+  child.on('error', function (err) {
+    console.log('Failed to daemonize');
+  });
+
+  child.on('close', function (code) {
+    console.log('daemon exited with code: ' + code);
+  });
+} else {
+  pm.start(options);
+}
