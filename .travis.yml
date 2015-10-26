@@ -5,3 +5,4 @@ node_js:
   - "0.8"
 before_install:
   - '[ "${TRAVIS_NODE_VERSION}" != "0.8" ] || npm install -g npm@~1.4.6'
+sudo: false
