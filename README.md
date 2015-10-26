@@ -3,6 +3,12 @@ node-pm [![Build Status](https://travis-ci.org/sazze/node-pm.png?branch=master/m
 
 Run your nodejs service in style (think php-fpm for nodejs)
 
+**Version Matrix:**
+
+node version | node-pm version
+------------ | ---------------
+\>= 0.10.0 | >= 0.11.0
+0.8.x | <= 0.10.6
 
 Installation
 ====================
