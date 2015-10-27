@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "lodash": "^3.10.1",
+    "lsof": "^0.1.0",
     "optimist": "~0.6.0",
     "sand-extend": "0.0.1",
     "semver": "^5.0.3",

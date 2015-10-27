@@ -335,6 +335,138 @@ describe('Worker Manager', function() {
         done();
       });
     });
+
+    it('should re-open log files on SIGHUP', function (done) {
+      this.timeout(5000);
+
+      var out = fs.createWriteStream('./out.log', {flags: 'w+'});
+      var err = fs.createWriteStream('./out.err', {flags: 'w+'});
+
+      out.write('start test', function () {
+        err.write('start test', function () {
+          runTest();
+        });
+      });
+
+      function runTest() {
+        expect(out.fd).to.not.equal(null);
+        expect(err.fd).to.not.equal(null);
+
+        expect(fs.existsSync('./out.log')).to.equal(true);
+        expect(fs.existsSync('./out.err')).to.equal(true);
+        expect(fs.existsSync('./out.log.1')).to.equal(false);
+        expect(fs.existsSync('./out.err.1')).to.equal(false);
+
+        spawn('logger.js -n 1 -vvv', [null, out, err, 'ipc']);
+
+        ps.once('start', function () {
+          setTimeout(function () {
+            fs.renameSync('./out.log', './out.log.1');
+            fs.renameSync('./out.err', './out.err.1');
+
+            expect(fs.existsSync('./out.log')).to.equal(false);
+            expect(fs.existsSync('./out.err')).to.equal(false);
+            expect(fs.existsSync('./out.log.1')).to.equal(true);
+            expect(fs.existsSync('./out.err.1')).to.equal(true);
+
+            ps.kill('SIGHUP');
+
+            setTimeout(function () {
+              expect(fs.existsSync('./out.log')).to.equal(true);
+              expect(fs.existsSync('./out.err')).to.equal(true);
+              expect(fs.existsSync('./out.log.1')).to.equal(true);
+              expect(fs.existsSync('./out.err.1')).to.equal(true);
+
+              setTimeout(function () {
+                ps.kill();
+              }, 1000);
+            }, 1000);
+          }, 1000);
+        });
+
+        ps.once('exit', function () {
+          out.close(function () {
+            err.close(function () {
+              fs.unlink('./out.log.1', function (err) {
+                fs.unlink('./out.err.1', function (err) {
+                  fs.unlink('./out.log', function (err) {
+                    fs.unlink('./out.err', function (err) {
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      }
+    });
+
+    it('should re-open log files on SIGUSR2', function (done) {
+      this.timeout(5000);
+
+      var out = fs.createWriteStream('./out.log', {flags: 'w+'});
+      var err = fs.createWriteStream('./out.err', {flags: 'w+'});
+
+      out.write('start test', function () {
+        err.write('start test', function () {
+          runTest();
+        });
+      });
+
+      function runTest() {
+        expect(out.fd).to.not.equal(null);
+        expect(err.fd).to.not.equal(null);
+
+        expect(fs.existsSync('./out.log')).to.equal(true);
+        expect(fs.existsSync('./out.err')).to.equal(true);
+        expect(fs.existsSync('./out.log.1')).to.equal(false);
+        expect(fs.existsSync('./out.err.1')).to.equal(false);
+
+        spawn('logger.js -n 1 -vvv', [null, out, err, 'ipc']);
+
+        ps.once('start', function () {
+          setTimeout(function () {
+            fs.renameSync('./out.log', './out.log.1');
+            fs.renameSync('./out.err', './out.err.1');
+
+            expect(fs.existsSync('./out.log')).to.equal(false);
+            expect(fs.existsSync('./out.err')).to.equal(false);
+            expect(fs.existsSync('./out.log.1')).to.equal(true);
+            expect(fs.existsSync('./out.err.1')).to.equal(true);
+
+            ps.kill('SIGUSR2');
+
+            setTimeout(function () {
+              expect(fs.existsSync('./out.log')).to.equal(true);
+              expect(fs.existsSync('./out.err')).to.equal(true);
+              expect(fs.existsSync('./out.log.1')).to.equal(true);
+              expect(fs.existsSync('./out.err.1')).to.equal(true);
+
+              setTimeout(function () {
+                ps.kill();
+              }, 1000);
+            }, 1000);
+          }, 1000);
+        });
+
+        ps.once('exit', function () {
+          out.close(function () {
+            err.close(function () {
+              fs.unlink('./out.log.1', function (err) {
+                fs.unlink('./out.err.1', function (err) {
+                  fs.unlink('./out.log', function (err) {
+                    fs.unlink('./out.err', function (err) {
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      }
+    });
   });
 
   describe('during shutdown', function() {
@@ -432,12 +564,22 @@ describe('Worker Manager', function() {
  * that function on next output.
  *
  * @param cmd the command to run
+ * @param [stdio] the stdio array to use for the spawned process
  * @param [cb] the callback function with either a out or line parameter
  *
  * @returns {child_process}
  */
-function spawn(cmd, cb) {
-  ps = child.spawn(__dirname + '/../bin/node-pm', cmd.split(' '), { cwd: __dirname + '/scripts', stdio: [null, null, null, 'ipc'] });
+function spawn(cmd, stdio, cb) {
+  if (typeof stdio === 'function') {
+    cb = stdio;
+    stdio = undefined;
+  }
+
+  if (!stdio) {
+    stdio = [null, null, null, 'ipc'];
+  }
+
+  ps = child.spawn(__dirname + '/../bin/node-pm', cmd.split(' '), { cwd: __dirname + '/scripts', stdio: stdio });
   var out = '';
 
   ps.on('message', function(json) {
@@ -499,8 +641,8 @@ function spawn(cmd, cb) {
 function getParameterName(fn) {
   "use strict";
   var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
-  var fnStr = fn.toString().replace(STRIP_COMMENTS, '')
-  var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(/([^\s,]+)/g)
+  var fnStr = fn.toString().replace(STRIP_COMMENTS, '');
+  var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(/([^\s,]+)/g);
 
   return result === null ? [] : result;
 }

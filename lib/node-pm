@@ -9,12 +9,12 @@ var config = require('./config');
 var path = require('path');
 var fs = require('fs');
 
-process.once('message', function (options) {
-  if (!_.isPlainObject(options)) {
-    options = JSON.parse(options);
+process.once('message', function (opts) {
+  if (!_.isPlainObject(opts)) {
+    opts = JSON.parse(opts);
   }
 
-  options = _.merge({}, options);
+  var options = _.merge({}, opts);
 
   if (!_.isUndefined(options.d)) {
     delete options.d;
