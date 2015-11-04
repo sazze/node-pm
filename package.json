@@ -1,7 +1,7 @@
 {
   "name": "node-pm",
   "preferGlobal": true,
-  "version": "0.10.6",
+  "version": "0.11.0",
   "description": "A better worker process manager",
   "main": "./lib/main.js",
   "homepage": "",
@@ -10,15 +10,19 @@
     "docs": "jsdoc -c ./docs/template/jsdoc.conf.json"
   },
   "engines": [
-    "node >= 0.8.0"
+    "node >= 0.10.0"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/sazze/node-pm.git"
   },
   "dependencies": {
+    "lodash": "^3.10.1",
+    "lsof": "^0.1.0",
     "optimist": "~0.6.0",
     "sand-extend": "0.0.1",
+    "semver": "^5.0.3",
+    "uid-number": "0.0.6",
     "underscore": "~1.5.2"
   },
   "devDependencies": {
