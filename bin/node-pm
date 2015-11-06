@@ -57,7 +57,15 @@ if (options.d) {
 
   process.umask(0);
 
-  var child = cp.spawn('node', [path.resolve(path.join(__dirname, '..', 'lib', 'node-pm'))], childOptions);
+  var childArgs = [].concat(process.execArgv);
+
+  if (process.env.NODE_EXEC_ARGV) {
+    childArgs = childArgs.concat(process.env.NODE_EXEC_ARGV.split(','));
+  }
+
+  childArgs.push(path.resolve(path.join(__dirname, '..', 'lib', 'node-pm')));
+
+  var child = cp.spawn('node', childArgs, childOptions);
 
   child.on('message', function (message) {
     if (message == 'options') {
@@ -77,5 +85,21 @@ if (options.d) {
     console.log('daemon exited with code: ' + code);
   });
 } else {
+  if (process.env.NODE_EXEC_ARGV) {
+    // attempt to honor the V8 options specified in NODE_EXEC_ARGV environment variable
+    // since we're not running in a daemon, it would be better to pass these directly to node:
+    //
+    // node --harmony node-pm -n 1 app.js
+
+    var v8 = require('v8');
+
+    var nodeArgs = process.env.NODE_EXEC_ARGV.split(',');
+
+    nodeArgs.map(function (arg) {
+      v8.setFlagsFromString(arg);
+      process.execArgv.push(arg);
+    });
+  }
+
   pm.start(options);
 }
