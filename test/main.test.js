@@ -48,8 +48,11 @@ describe('Worker Manager', function() {
           expect(options).to.not.have.property('tStop');
           expect(options).to.not.have.property('tMaxAge');
 
-          done();
-          return 'kill';
+          ps.once('exit', function () {
+            done();
+          });
+
+          ps.kill();
         }
       });
     });
@@ -590,15 +593,13 @@ function spawn(cmd, stdio, cb) {
     }
   });
 
-  /*
-  ps.stderr.on('data', function(data) {
-    console.log(data.toString());
-  });
-
-  ps.stdout.on('data', function(data) {
-    console.log(data.toString());
-  });
-  */
+  // ps.stderr.on('data', function(data) {
+  //   console.log(data.toString());
+  // });
+  //
+  // ps.stdout.on('data', function(data) {
+  //   console.log(data.toString());
+  // });
 
   if (typeof cb === 'function') {
     ps.stdout.on('data', function(data) {
