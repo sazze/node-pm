@@ -545,6 +545,36 @@ describe('Worker Manager', function() {
         }
       });
     });
+
+    it('should handle processes that don\'t exit', function (done) {
+      var pid;
+      var killed = false;
+      var outObj = {};
+
+      spawn('childNoExit.js -n 1 -vvv --tStop 100');
+
+      ps.once('cluster:listening', function(worker) {
+        pid = worker.process.pid;
+        ps.kill();
+      });
+
+      ps.once('cluster:exit', function (worker) {
+        expect(pid).to.be.gt(0);
+        expect(worker.process.pid).to.equal(pid);
+      });
+
+      ps.once('exit', function () {
+        try {
+          killed = !process.kill(pid, 0);
+        } catch (e) {
+          killed = e.code !== 'EPERM';
+        }
+
+        expect(killed).to.equal(true);
+
+        done();
+      });
+    });
   });
 
   afterEach(function() {
