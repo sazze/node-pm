@@ -7,8 +7,13 @@ Run your nodejs service in style (think php-fpm for nodejs)
 
 node version | node-pm version
 ------------ | ---------------
-\>= 0.10.0 | >= 0.11.0
+6.9.x | >= 0.11.6
+4.2.x | >= 0.11.6
+0.12.x | 0.11.0 - 0.11.5
+0.10.x | 0.11.0 - 0.11.5
 0.8.x | <= 0.10.6
+
+* node versions below 4.2.0 are no longer supported as of version 0.11.6 of node-pm
 
 Installation
 ====================
