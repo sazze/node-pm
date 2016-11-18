@@ -470,6 +470,63 @@ describe('Worker Manager', function() {
         });
       }
     });
+
+    it('should restart workers on SIGHUP', function (done) {
+      var restart = false;
+
+      spawn('httpServer.js -n 1 -vvv');
+
+      ps.once('cluster:listening', function () {
+        setTimeout(function () {
+          ps.once('cluster:listening', function () {
+            setTimeout(function () {
+              ps.kill();
+            }, 100);
+          });
+
+          ps.kill('SIGHUP');
+        }, 500);
+      });
+
+      ps.once('restart', function () {
+        restart = true;
+      });
+
+      ps.once('exit', function () {
+        expect(restart).to.equal(true);
+        done();
+      });
+    });
+    
+    it('should kill high cpu processes', function (done) {
+      this.timeout(5000);
+
+      var listening = 0;
+      var exits = 0;
+
+      spawn('highCpu.js -n 2 -vvv --tStop 1000');
+
+      ps.on('cluster:listening', function () {
+        listening++;
+
+        if (listening == 2) {
+          ps.on('cluster:exit', function () {
+            exits++;
+          });
+
+          setTimeout(function () {
+            ps.kill();
+          }, 2000);
+        }
+      });
+
+      ps.once('exit', function () {
+        expect(listening).to.equal(2);
+        expect(exits).to.equal(2);
+
+        done();
+      });
+    });
   });
 
   describe('during shutdown', function() {
