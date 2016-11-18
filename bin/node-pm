@@ -43,6 +43,8 @@ delete options.tStart;
 delete options.tStop;
 delete options.tMaxAge;
 
+options.CWD = CWD;
+
 if (options.d) {
   // run as a daemon
   var childSTDOUT = tty.isatty(1) ? 'ignore' : process.stdout;
